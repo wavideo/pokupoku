@@ -841,7 +841,7 @@ function renderHomeSummary() {
   if (dayStart < targetStart) {
     const daysUntilStart = Math.max(0, dayDiff(dayStart, targetStart));
     const inPmsWindow = dayStart >= pmsStart;
-    const baseText = daysUntilStart === 0 ? "월경이 오늘 시작해요" : `월경이 ${daysUntilStart}일 뒤에 시작해요`;
+    const baseText = daysUntilStart === 0 ? "오늘 시작해요" : `${daysUntilStart}일 뒤에 시작해요`;
     if (inPmsWindow) {
       todayStatus.textContent = daysUntilStart === 0 ? "PMS 기간 · 월경 오늘 시작" : `PMS 기간 · 월경 ${daysUntilStart}일 뒤 시작`;
     } else {
