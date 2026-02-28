@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>뽀꾸뽀꾸 - 주기 캘린더</title>
+    <link rel="stylesheet" href="styles.css?v=20260228-1" />
+  </head>
+  <body>
+    <div class="page">
+      <main class="phone">
+        <header class="topbar">
+          <button id="resetDataBtn" type="button" class="topbar-reset">리셋</button>
+          <div class="topbar-center">
+            <button id="prevMonth" type="button" class="topbar-btn topbar-nav" aria-label="이전 달">‹</button>
+            <div class="topbar-title">
+              <span id="topbarYear" class="topbar-year"></span>
+              <h1 id="topbarMonth" class="topbar-month"></h1>
+            </div>
+            <button id="nextMonth" type="button" class="topbar-btn topbar-nav" aria-label="다음 달">›</button>
+          </div>
+          <button id="goToday" type="button" class="topbar-today">오늘</button>
+        </header>
+
+        <section id="home" class="panel active">
+          <div class="calendar-wrap">
+            <div id="calendarMainSurface" class="calendar-main-surface">
+              <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+            <div id="calendarGhost" class="calendar-ghost hidden" aria-hidden="true">
+              <div id="calendarGhostGrid" class="calendar-grid"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="bottom-panel" aria-label="하단 정보 패널">
+        <div id="bottomSummary" class="summary-shell">
+          <div class="summary-title-row">
+            <p id="todayStatus" class="summary-primary">기록이 없어요.</p>
+          </div>
+          <p id="nextPrediction" class="summary-secondary"></p>
+          <p id="avgStats" class="summary-meta"></p>
+          <div class="timeline-wrap" aria-label="곧 있을 일정">
+            <div id="summaryTimeline" class="timeline-track"></div>
+            <div class="timeline-edge">
+              <span id="timelineStartLabel"></span>
+              <span id="timelineEndLabel"></span>
+            </div>
+          </div>
+          <div class="sync-row">
+            <span id="syncStatusText" class="sync-status">로컬 저장 모드</span>
+            <button id="connectAccountBtn" type="button" class="sync-connect-btn">연결</button>
+          </div>
+          <button id="dashboardAddTodayBtn" type="button" class="summary-record-btn" aria-label="오늘 기록 추가"></button>
+        </div>
+        <div id="bottomActionHost" class="bottom-action-host hidden" aria-hidden="true"></div>
+      </aside>
+    </div>
+
+    <div id="deleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="modal-sheet">
+        <h3 id="deleteModalTitle">기록을 삭제할까요?</h3>
+        <p id="deleteModalText">선택한 월경 기록을 삭제합니다.</p>
+        <div class="modal-actions">
+          <button id="cancelDeleteBtn" type="button" class="btn-cancel">취소</button>
+          <button id="confirmDeleteBtn" type="button" class="btn-delete">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="actionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+      <div class="modal-sheet action-sheet">
+        <div id="actionSheetHandle" class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-meta-row">
+          <div class="sheet-range-wrap">
+            <span id="actionModalRange" class="sheet-range hidden"></span>
+          </div>
+          <button id="actionLoveRow" type="button" class="sheet-love-row" aria-pressed="false" aria-label="뽀꾸뽀꾸">
+            <span class="sheet-love-toggle" aria-hidden="true">
+              <span class="sheet-love-knob"></span>
+            </span>
+          </button>
+        </div>
+        <div class="sheet-list">
+          <div class="sheet-row">
+            <button id="actionStartBtn" type="button" class="sheet-item">+ 월경 시작</button>
+            <button id="actionEndBtn" type="button" class="sheet-item">✓ 월경 종료</button>
+          </div>
+          <button id="actionPmsBtn" type="button" class="sheet-item">PMS 시작</button>
+          <button id="actionReopenBtn" type="button" class="sheet-item">월경가 아직 끝나지 않음</button>
+          <button id="actionDeleteBtn" type="button" class="sheet-item"><span class="delete-btn-icon" aria-hidden="true"></span>삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="커플 연동">
+      <div class="modal-sheet auth-sheet">
+        <div id="authSheetHandle" class="sheet-handle" aria-hidden="true"></div>
+        <div class="auth-top-row">
+          <button id="authBackBtn" type="button" class="auth-back-btn hidden" aria-label="뒤로가기">
+            <span class="auth-back-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div id="authEntryRow" class="auth-entry-row">
+          <button id="entryCreateInviteBtn" type="button" class="sheet-item">초대 코드 만들기</button>
+          <button id="entryJoinByCodeBtn" type="button" class="sheet-item">초대 코드 입력</button>
+        </div>
+        <div id="createFlow" class="auth-details hidden">
+          <label class="auth-label" for="createNicknameInput">닉네임</label>
+          <input id="createNicknameInput" class="auth-input" type="text" maxlength="20" />
+          <label class="auth-label" for="createPinInput">비밀번호 6자리</label>
+          <input id="createPinInput" class="auth-input" type="password" inputmode="numeric" maxlength="6" />
+          <button id="createFlowNextBtn" type="button" class="sheet-item">초대 코드 만들기</button>
+        </div>
+        <div id="createDoneFlow" class="auth-details hidden">
+          <label class="auth-label" for="createdCodeInput">초대 코드</label>
+          <input id="createdCodeInput" class="auth-input" type="text" readonly />
+          <div class="auth-row auth-row-single">
+            <button id="copyCreatedCodeBtn" type="button" class="sheet-item">코드 복사</button>
+            <button id="disconnectCoupleBtn" type="button" class="sheet-item">연결해제</button>
+          </div>
+        </div>
+        <div id="joinFlow" class="auth-details hidden">
+          <label class="auth-label" for="joinCodeInput">초대 코드 입력</label>
+          <input id="joinCodeInput" class="auth-input" type="text" />
+          <button id="joinFlowNextBtn" type="button" class="sheet-item">다음</button>
+        </div>
+        <div id="joinDoneFlow" class="auth-details hidden">
+          <label class="auth-label">상대방 닉네임</label>
+          <div id="partnerNicknameText" class="auth-static">-</div>
+          <button id="disconnectCoupleBtnJoin" type="button" class="sheet-item">연결해제</button>
+        </div>
+        <p id="authStatusText" class="auth-status"></p>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="app.js?v=20260228-1"></script>
+  </body>
+</html>
