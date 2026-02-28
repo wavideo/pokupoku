@@ -1,0 +1,4 @@
+window.POKUPOKU_CONFIG = {
+  supabaseUrl: "https://ptgtenjzccxqawjqmeev.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0Z3Rlbmp6Y2N4cWF3anFtZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNzk0NzQsImV4cCI6MjA4Nzg1NTQ3NH0.i2AMYbRuNDkY74TAPruhBrcGSNWt5PQNPuF_II6CXG4",
+};
