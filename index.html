@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=20260228-1" />
+    <link rel="stylesheet" href="styles.css?v=20260518-7" />
   </head>
   <body>
     <div class="page">
@@ -86,14 +86,30 @@
             </span>
           </button>
         </div>
+        <div id="dailyLogSummary" class="daily-log-summary hidden" aria-label="선택한 날짜 기록 요약">
+          <p id="dailyLogSummaryTags" class="daily-log-summary-tags"></p>
+          <p id="dailyLogSummaryNote" class="daily-log-summary-note"></p>
+        </div>
         <div class="sheet-list">
           <div class="sheet-row">
             <button id="actionStartBtn" type="button" class="sheet-item">+ 월경 시작</button>
             <button id="actionEndBtn" type="button" class="sheet-item">✓ 월경 종료</button>
           </div>
+          <button id="actionLogBtn" type="button" class="sheet-item">기록</button>
           <button id="actionPmsBtn" type="button" class="sheet-item">PMS 시작</button>
           <button id="actionReopenBtn" type="button" class="sheet-item">월경가 아직 끝나지 않음</button>
           <button id="actionDeleteBtn" type="button" class="sheet-item"><span class="delete-btn-icon" aria-hidden="true"></span>삭제</button>
+        </div>
+        <div id="dailyLogPanel" class="daily-log-panel hidden" aria-label="날짜 기록">
+          <div class="daily-log-head">
+            <p id="dailyLogTitle" class="daily-log-title">기록</p>
+          </div>
+          <div id="dailyLogGroups" class="daily-log-groups"></div>
+          <label class="daily-note-label" for="dailyNoteInput">메모</label>
+          <textarea id="dailyNoteInput" class="daily-note-input" rows="4" maxlength="500" placeholder="오늘 몸 상태나 기억할 일을 적어두세요."></textarea>
+          <div class="daily-log-footer">
+            <button id="dailyLogDoneBottomBtn" type="button" class="daily-log-close daily-log-close-bottom" aria-label="기록 닫기">완료</button>
+          </div>
         </div>
       </div>
     </div>
@@ -142,7 +158,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="app.js?v=20260228-1"></script>
+    <script src="app.js?v=20260518-7"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

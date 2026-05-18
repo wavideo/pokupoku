@@ -1,11 +1,11 @@
-const CACHE_NAME = "pokupoku-cache-v1";
+const CACHE_NAME = "pokupoku-cache-v8";
 const OFFLINE_URL = "offline.html";
 
 const CORE_ASSETS = [
   "./",
   "index.html",
-  "styles.css?v=20260228-1",
-  "app.js?v=20260228-1",
+  "styles.css?v=20260518-7",
+  "app.js?v=20260518-7",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",

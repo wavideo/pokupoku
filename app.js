@@ -11,6 +11,7 @@ const state = {
     customPmsStartDate: null,
     pmsStartOverrides: {},
     loveDates: [],
+    dailyLogs: {},
   },
   monthCursor: new Date(),
   gesture: {
@@ -35,6 +36,41 @@ const state = {
   pendingActionNextStartDate: null,
   monthAnimating: false,
 };
+
+const DAILY_LOG_GROUPS = [
+  {
+    title: "감정 / 기분",
+    items: ["예민함", "우울감", "눈물남", "불안함", "무기력", "짜증남", "감정기복 심함", "집중 안됨", "사회생활 힘듦", "혼자 있고 싶음"],
+  },
+  {
+    title: "통증 / 신체 증상",
+    items: ["아랫배 통증", "허리 아픔", "두통", "가슴 통증", "몸 붓기", "속 울렁거림", "피곤함", "어지러움", "근육통", "몸살 느낌"],
+  },
+  {
+    title: "식욕 / 소화",
+    items: ["폭식함", "단 음식 땡김", "짠 음식 땡김", "식욕 없음", "커피 많이 마심", "속 더부룩", "변비", "설사"],
+  },
+  {
+    title: "피부 / 외형",
+    items: ["피부 뒤집힘", "트러블 남", "얼굴 부음", "체중 증가 느낌"],
+  },
+  {
+    title: "수면",
+    items: ["잠 많이 잠", "잠 안 옴", "자도 피곤함", "새벽에 깸", "악몽 꿈"],
+  },
+  {
+    title: "행동 / 생활패턴",
+    items: ["운동함", "운동 못함", "카페인 줄임", "술 마심", "야식 먹음", "스트레스 심함", "과로함", "오래 걸음"],
+  },
+  {
+    title: "월경 상태",
+    items: ["양 많음", "양 적음", "혈색 진함", "덩어리 있음", "생리 시작 느낌", "끝나는 느낌", "갑자기 시작함"],
+  },
+  {
+    title: "약 / 관리",
+    items: ["진통제 먹음", "영양제 먹음", "찜질함", "휴식함", "병원 다녀옴"],
+  },
+];
 
 const backend = {
   client: null,
@@ -130,6 +166,47 @@ function getLoveDatesSet() {
   return new Set(state.settings.loveDates || []);
 }
 
+function getDailyLogs() {
+  if (!state.settings.dailyLogs || typeof state.settings.dailyLogs !== "object" || Array.isArray(state.settings.dailyLogs)) {
+    state.settings.dailyLogs = {};
+  }
+  return state.settings.dailyLogs;
+}
+
+function getDailyLog(dateIso) {
+  const logs = getDailyLogs();
+  const raw = logs[dateIso] || {};
+  const tags = Array.isArray(raw.tags) ? raw.tags.filter(Boolean) : [];
+  const note = typeof raw.note === "string" ? raw.note : "";
+  return { tags: Array.from(new Set(tags)), note };
+}
+
+function hasDailyLog(dateIso) {
+  const log = getDailyLog(dateIso);
+  return log.tags.length > 0 || log.note.trim().length > 0;
+}
+
+function setDailyLog(dateIso, nextLog) {
+  if (!dateIso) return;
+  const logs = getDailyLogs();
+  const tags = Array.isArray(nextLog.tags) ? Array.from(new Set(nextLog.tags.filter(Boolean))) : [];
+  const note = typeof nextLog.note === "string" ? nextLog.note : "";
+  if (!tags.length && !note.trim()) {
+    delete logs[dateIso];
+  } else {
+    logs[dateIso] = { tags, note };
+  }
+  saveSettings();
+}
+
+function toggleDailyLogTag(dateIso, tag) {
+  const log = getDailyLog(dateIso);
+  const set = new Set(log.tags);
+  if (set.has(tag)) set.delete(tag);
+  else set.add(tag);
+  setDailyLog(dateIso, { ...log, tags: Array.from(set) });
+}
+
 function toggleLoveDate(dateIso) {
   if (!dateIso) return false;
   const set = getLoveDatesSet();
@@ -178,6 +255,7 @@ function loadState() {
   if (settingsRaw) {
     state.settings = { ...state.settings, ...JSON.parse(settingsRaw) };
   }
+  getDailyLogs();
 }
 
 function setSyncStatus(message) {
@@ -1063,6 +1141,12 @@ function renderCalendarInto(monthCursor, grid) {
       cell.appendChild(love);
     }
 
+    if (hasDailyLog(key)) {
+      const logMark = document.createElement("span");
+      logMark.className = "daily-log-mark";
+      cell.appendChild(logMark);
+    }
+
     if (type) {
       cell.classList.add(type);
       const fill = document.createElement("span");
@@ -1280,6 +1364,84 @@ function openDeleteModal(index) {
   modal.classList.remove("hidden");
 }
 
+function closeDailyLogPanel() {
+  const sheet = document.querySelector("#actionModal .action-sheet");
+  const panel = $("dailyLogPanel");
+  if (sheet) sheet.classList.remove("log-editor-open");
+  if (panel) panel.classList.add("hidden");
+}
+
+function renderDailyLogEditor(dateIso) {
+  const sheet = document.querySelector("#actionModal .action-sheet");
+  const panel = $("dailyLogPanel");
+  const groupsEl = $("dailyLogGroups");
+  const titleEl = $("dailyLogTitle");
+  const noteEl = $("dailyNoteInput");
+  if (!panel || !groupsEl || !noteEl) return;
+  if (sheet) sheet.classList.add("log-editor-open");
+  const log = getDailyLog(dateIso);
+  const selected = new Set(log.tags);
+  if (titleEl) titleEl.textContent = `${fmtMonthDay(dateIso)} 기록`;
+  groupsEl.innerHTML = "";
+  DAILY_LOG_GROUPS.forEach((group) => {
+    const groupEl = document.createElement("section");
+    groupEl.className = "daily-log-group";
+    const heading = document.createElement("h4");
+    heading.className = "daily-log-group-title";
+    heading.textContent = group.title;
+    const chips = document.createElement("div");
+    chips.className = "daily-log-chips";
+    group.items.forEach((item) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "daily-log-chip";
+      chip.textContent = item;
+      chip.setAttribute("aria-pressed", selected.has(item) ? "true" : "false");
+      chip.addEventListener("click", () => {
+        toggleDailyLogTag(dateIso, item);
+        renderDailyLogEditor(dateIso);
+        renderDailyLogSummary(dateIso);
+        renderCalendar();
+      });
+      chips.appendChild(chip);
+    });
+    groupEl.appendChild(heading);
+    groupEl.appendChild(chips);
+    groupsEl.appendChild(groupEl);
+  });
+  noteEl.value = log.note;
+  panel.classList.remove("hidden");
+}
+
+function renderDailyLogSummary(dateIso) {
+  const wrap = $("dailyLogSummary");
+  const tagsEl = $("dailyLogSummaryTags");
+  const noteEl = $("dailyLogSummaryNote");
+  if (!wrap || !tagsEl || !noteEl) return;
+  const log = getDailyLog(dateIso);
+  const note = log.note.trim();
+  if (!log.tags.length && !note) {
+    wrap.classList.add("hidden");
+    wrap.classList.remove("empty");
+    tagsEl.textContent = "";
+    noteEl.textContent = "";
+    return;
+  }
+  wrap.classList.remove("hidden", "empty");
+  tagsEl.textContent = log.tags.length ? log.tags.join(" · ") : "선택한 태그 없음";
+  noteEl.textContent = note;
+  noteEl.classList.toggle("hidden", !note);
+}
+
+function closeDailyLogEditorAndRefresh() {
+  closeDailyLogPanel();
+  const logBtn = $("actionLogBtn");
+  if (logBtn && state.pendingActionDate) {
+    logBtn.textContent = hasDailyLog(state.pendingActionDate) ? "기록 수정" : "기록 추가";
+  }
+  renderCalendar();
+}
+
 function closeDeleteModal() {
   const modal = $("deleteModal");
   if (!modal) return;
@@ -1332,8 +1494,11 @@ function openActionModal(dateIso, recordIndex) {
   const reopenBtn = $("actionReopenBtn");
   const loveRow = $("actionLoveRow");
   const pmsBtn = $("actionPmsBtn");
+  const logBtn = $("actionLogBtn");
   const isActualDate = state.pendingActionRecordIndex !== null && state.pendingActionRecordIndex >= 0;
   const isFuture = isFutureDate(dateIso);
+  closeDailyLogPanel();
+  renderDailyLogSummary(dateIso);
   const setActionButton = (btn, text, enabled, order, isEdit) => {
     if (!btn) return;
     btn.style.display = "block";
@@ -1431,13 +1596,19 @@ function openActionModal(dateIso, recordIndex) {
       if (endBtn && endBtn.disabled) endBtn.style.display = "none";
     }
     if (loveRow) {
-      loveRow.disabled = isFuture;
+      loveRow.disabled = false;
       loveRow.setAttribute("aria-pressed", state.settings.loveDates?.includes(dateIso) ? "true" : "false");
     }
     if (pmsBtn) {
       pmsBtn.style.display = "none";
       pmsBtn.textContent = "PMS 시작";
       pmsBtn.style.order = "5";
+    }
+    if (logBtn) {
+      logBtn.style.display = "block";
+      logBtn.disabled = false;
+      logBtn.textContent = hasDailyLog(dateIso) ? "기록 수정" : "기록 추가";
+      logBtn.style.order = "3";
     }
   } else {
     const openIdx = getOpenEndedRecordIndex();
@@ -1468,7 +1639,7 @@ function openActionModal(dateIso, recordIndex) {
       reopenBtn.style.order = "4";
     }
     if (loveRow) {
-      loveRow.disabled = isFuture;
+      loveRow.disabled = false;
       loveRow.setAttribute("aria-pressed", state.settings.loveDates?.includes(dateIso) ? "true" : "false");
     }
     const canInlinePms = !isFuture && !canEnd && !!state.pendingActionNextStartDate;
@@ -1487,6 +1658,12 @@ function openActionModal(dateIso, recordIndex) {
       pmsBtn.style.display = canInlinePms ? "none" : !isFuture && state.pendingActionNextStartDate ? "block" : "none";
       pmsBtn.textContent = "PMS 시작";
       pmsBtn.style.order = "5";
+    }
+    if (logBtn) {
+      logBtn.style.display = "block";
+      logBtn.disabled = false;
+      logBtn.textContent = hasDailyLog(dateIso) ? "기록 수정" : "기록 추가";
+      logBtn.style.order = "3";
     }
   }
 
@@ -1516,6 +1693,7 @@ function closeActionModal() {
   const modal = $("actionModal");
   if (!modal) return;
   modal.classList.add("hidden");
+  closeDailyLogPanel();
   resetActionSheetDragStyles();
   state.pendingActionDate = null;
   state.pendingActionRecordIndex = null;
@@ -1858,7 +2036,7 @@ function initActionSheetDragClose() {
 
   dragZone.addEventListener("pointerdown", (e) => {
     if (!(e.target instanceof HTMLElement)) return;
-    const interactive = e.target.closest(".sheet-list, .sheet-footer, button");
+    const interactive = e.target.closest(".sheet-list, .sheet-footer, .daily-log-panel, button");
     if (interactive) return;
     activePointerId = e.pointerId;
     startDrag(e.clientY);
@@ -1884,7 +2062,7 @@ function initActionSheetDragClose() {
     "touchstart",
     (e) => {
       if (!(e.target instanceof HTMLElement)) return;
-      const interactive = e.target.closest(".sheet-list, .sheet-footer, button");
+      const interactive = e.target.closest(".sheet-list, .sheet-footer, .daily-log-panel, button");
       if (interactive) return;
       if (modal.classList.contains("hidden") || !e.touches.length) return;
       const t = e.touches[0];
@@ -2468,6 +2646,34 @@ function bindEvents() {
     });
   }
 
+  if ($("actionLogBtn")) {
+    $("actionLogBtn").addEventListener("click", () => {
+      if (!state.pendingActionDate) return;
+      renderDailyLogEditor(state.pendingActionDate);
+    });
+  }
+
+  const bindDailyLogDone = (id) => {
+    if (!$(id)) return;
+    $(id).addEventListener("click", () => {
+      closeDailyLogEditorAndRefresh();
+    });
+  };
+
+  bindDailyLogDone("dailyLogDoneBottomBtn");
+
+  if ($("dailyNoteInput")) {
+    $("dailyNoteInput").addEventListener("input", () => {
+      if (!state.pendingActionDate) return;
+      const log = getDailyLog(state.pendingActionDate);
+      setDailyLog(state.pendingActionDate, { ...log, note: $("dailyNoteInput").value });
+      const logBtn = $("actionLogBtn");
+      if (logBtn) logBtn.textContent = hasDailyLog(state.pendingActionDate) ? "기록 수정" : "기록 추가";
+      renderDailyLogSummary(state.pendingActionDate);
+      renderCalendar();
+    });
+  }
+
   if ($("actionLoveRow")) {
     $("actionLoveRow").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2592,6 +2798,7 @@ function bindEvents() {
         customPmsStartDate: null,
         pmsStartOverrides: {},
         loveDates: [],
+        dailyLogs: {},
       };
       closeDeleteModal();
       renderAll();
