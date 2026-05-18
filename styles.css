@@ -636,7 +636,7 @@ body {
     0 -10px 30px rgba(0, 0, 0, 0.14),
     0 -2px 8px rgba(0, 0, 0, 0.08);
   animation: none;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .sheet-handle {
@@ -685,6 +685,8 @@ body {
 .action-sheet {
   max-height: 82vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .action-sheet.log-editor-open .sheet-meta-row,
@@ -1018,6 +1020,7 @@ body {
   padding-top: 0;
   background: #ffffff;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .daily-log-panel.hidden {
